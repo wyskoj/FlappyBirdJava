@@ -1,0 +1,16 @@
+= FlappyBirdJava
+
+A simple implementation of a Flappy Bird 2D game using jMonkeyEngine.
+The code is commented so that a beginner can follow along and understand how it works.
+
+== Running
+
+[source,bash]
+----
+$ ./gradlew run
+----
+
+== License
+
+Code licensed under MIT.
+Assets from https://github.com/samuelcust/flappy-bird-assets[samuelcust/flappy-bird-assets].
