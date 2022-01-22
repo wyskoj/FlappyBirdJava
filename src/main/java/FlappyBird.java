@@ -1,22 +1,13 @@
 import com.jme3.app.SimpleApplication;
 import com.jme3.audio.AudioData;
 import com.jme3.audio.AudioNode;
-import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
-import com.jme3.input.controls.KeyTrigger;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
-import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.texture.Texture2D;
 import com.jme3.ui.Picture;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.jme3.scene.Spatial.CullHint.Always;
-import static com.jme3.scene.Spatial.CullHint.Dynamic;
 
 /**
  * This main class acts as a "hub" for the program. It contains the main method, which is the entry point for the
@@ -38,58 +29,6 @@ import static com.jme3.scene.Spatial.CullHint.Dynamic;
 public class FlappyBird extends SimpleApplication implements ActionListener {
 	
 	/**
-	 * Faby is the player of our game.
-	 */
-	Faby faby;
-	
-	/**
-	 * This array stores each of the barriers. A single barrier consists of the two pipes.
-	 */
-	final Barrier[] barriers = new Barrier[100];
-	
-	/**
-	 * The scrolling background.
-	 */
-	Background background;
-	
-	/**
-	 * The scrolling base.
-	 */
-	Base base;
-	
-	/**
-	 * The score object of the game. Note that this is not a number of the score, but rather the "Score" object that
-	 * displays the number to the screen.
-	 */
-	Score score;
-	
-	/**
-	 * The start screen.
-	 */
-	Spatial startScreen;
-	
-	/**
-	 * The game over screen.
-	 */
-	Spatial gameOverScreen;
-	
-	/**
-	 * Maps a name of a sound to the sound itself. This is used to play sounds.
-	 */
-	final Map<String, AudioNode> sounds = new HashMap<>();
-	
-	/**
-	 * This string holds the current game state. The game should recognize these states: - "ready" - "playing" - "dead"
-	 */
-	String state = "ready";
-	
-	/**
-	 * On every frame of the game, we check to see if the score has changed. To have something to compare it to, we
-	 * write down the score to this variable, then compare it to the current score.
-	 */
-	private int lastScore = 0;
-	
-	/**
 	 * This is the main method. It is the entry point for the program.
 	 */
 	public static void main(String[] args) {
@@ -106,54 +45,7 @@ public class FlappyBird extends SimpleApplication implements ActionListener {
 	 */
 	@Override
 	public void simpleInitApp() {
-		/* Set up the game's camera */
-		cam.setParallelProjection(true); // Because our game is 2D, we want to use parallel projection
-		cam.setLocation(new Vector3f(0, 0, 10)); // Set the camera's position on layer 10
-		flyCam.setEnabled(false); // Because we don't want the user to be able to move the camera around, we disable the flyCam
-		
-		/* Here, we set up an action listener. This allows jMonkeyEngine to know when we perform an action. Our game
-		 * will have one action: the space bar. It will make Faby jump. */
-		inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE)); // Space bar -> "Jump"
-		inputManager.addListener(this, "Jump"); // This class will handle the "Jump" action
-		
-		/* Here, we create the game's player. Its name is Faby. Because we will need to reference Faby later on, we must
-		 * store Faby in a class variable. This means that any method in this class can reference it. All the class
-		 * variables in the program have been declared just below the class declaration. */
-		faby = new Faby(this);
-		
-		/* We want faby to start in the middle of the screen. Because the origin point of a sprite is in its lower left-
-		 * hand corner, we need to move faby to the right by half its width as well. */
-		faby.node.setLocalTranslation(centerX() - faby.width / 2F, centerY(), 0);
-		
-		/* Here, we create 100 pipe barriers. */
-		for (int i = 0; i < 100; i++) {
-			barriers[i] = new Barrier(this, i);
-		}
-		
-		/* Here, we load the "game over" text. Like how we had to nudge Faby over by its half of its sprite width for it to appear in the center, we do the same here.*/
-		gameOverScreen = getSprite("gameover.png");
-		guiNode.attachChild(gameOverScreen);
-		gameOverScreen.move(centerX() - 96, centerY(), 0);
-		
-		/* Here, we load the "start" graphic. */
-		startScreen = getSprite("message.png");
-		guiNode.attachChild(startScreen);
-		startScreen.move(centerX() - 92, centerY() - 74, 400);
-		
-		/* Here, we set up the scrolling background. */
-		background = new Background(this);
-		
-		/* Here, we set up the scrolling base. */
-		base = new Base(this);
-		
-		/* Here, we set up the game's score. */
-		score = new Score(this);
-		
-		/* Here, we set up the game's sound effects. */
-		sounds.put("flap", getSoundEffect("wing.wav"));
-		sounds.put("hit", getSoundEffect("hit.wav"));
-		sounds.put("score", getSoundEffect("score.wav"));
-		sounds.put("die", getSoundEffect("die.wav"));
+	
 	}
 	
 	/**
@@ -165,46 +57,6 @@ public class FlappyBird extends SimpleApplication implements ActionListener {
 	public void simpleUpdate(float tpf) {
 		super.simpleUpdate(tpf); // Call the superclass' update method to ensure that jME's code runs too
 		
-		/* Here, we tick all the game objects. */
-		
-		faby.tick(); // Tick Faby
-		
-		for (Barrier barrier : barriers) { // Tick all the barriers
-			barrier.tick();
-		}
-		
-		background.tick(); // Tick the background
-		base.tick(); // Tick the base
-		score.tick(); // Tick the score
-		
-		/* We check to see if Faby is intersecting any of the barriers. If so, we play the "hit" and "die" sound effects and end the game. */
-		for (Barrier barrier : barriers) {
-			if (faby.intersects(barrier)) {
-				sounds.get("hit").play();
-				sounds.get("die").play();
-				state = "dead";
-			}
-		}
-		
-		/* Check to see if we should play a sound. */
-		if (score() > lastScore) {
-			sounds.get("score").playInstance();
-		}
-		lastScore = score(); // Always update the last score, regardless
-		
-		/* We hide/show screens based on the game's state. */
-		if (state.equals("dead")) {
-			gameOverScreen.setCullHint(Dynamic);
-		} else {
-			gameOverScreen.setCullHint(Always);
-		}
-		
-		/* We should only show the start screen if the game is not running (the ready state). */
-		if (state.equals("ready")) {
-			startScreen.setCullHint(Dynamic);
-		} else {
-			startScreen.setCullHint(Always);
-		}
 	}
 	
 	/**
@@ -254,31 +106,7 @@ public class FlappyBird extends SimpleApplication implements ActionListener {
 	 */
 	@Override
 	public void onAction(String name, boolean isPressed, float tpf) {
-		if (name.equals("Jump") && isPressed) {
-			if (state.equals("ready")) {
-				state = "playing";
-			}
-			if (state.equals("playing")) {
-				faby.jump();
-			}
-		}
-	}
 	
-	/**
-	 * This method determines and returns the current score of the game. The current score is the number of barriers who
-	 * have passed over the center of the screen. For it to have fully passed over, the right edge must be past the
-	 * center.
-	 *
-	 * @return the current score of the game
-	 */
-	public int score() {
-		int count = 0;
-		for (Barrier barrier : barriers) {
-			if (barrier.xPosition < centerX() - 52) { // 52 is the width of a pipe
-				count++;
-			}
-		}
-		return count;
 	}
 	
 	/**
