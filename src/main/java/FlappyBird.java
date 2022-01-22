@@ -179,7 +179,7 @@ public class FlappyBird extends SimpleApplication implements ActionListener {
 		
 		/* We check to see if Faby is intersecting any of the barriers. If so, we play the "hit" and "die" sound effects and end the game. */
 		for (Barrier barrier : barriers) {
-			if (faby.intersects(barrier)) {
+			if (faby.intersects(barrier) && !state.equals("dead")) {
 				sounds.get("hit").play();
 				sounds.get("die").play();
 				state = "dead";
